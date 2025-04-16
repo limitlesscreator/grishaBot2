@@ -1,8 +1,10 @@
 const { Telegraf } = require('telegraf');
 const axios = require('axios');
+const express = require('express');
 require('dotenv').config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
+const app = express();
 
 // Функция для взаимодействия с Voiceflow
 async function interact(ctx, chatID, request) {
@@ -33,13 +35,12 @@ async function interact(ctx, chatID, request) {
     }
 }
 
-// Обработка команды /start
+// Обработка команд и сообщений
 bot.start(async (ctx) => {
     let chatID = ctx.message.chat.id;
     await interact(ctx, chatID, { type: "launch" });
 });
 
-// Обработка текстовых сообщений
 const ANY_WORD_REGEX = new RegExp(/(.+)/i);
 bot.hears(ANY_WORD_REGEX, async (ctx) => {
     let chatID = ctx.message.chat.id;
@@ -49,23 +50,19 @@ bot.hears(ANY_WORD_REGEX, async (ctx) => {
     });
 });
 
-// Обработка сообщений с фотографиями
 bot.on('photo', async (ctx) => {
     let chatID = ctx.message.chat.id;
     const photoArray = ctx.message.photo;
     const fileId = photoArray[photoArray.length - 1].file_id;
-
     await interact(ctx, chatID, {
         type: "text",
         payload: `${fileId}`
     });
 });
 
-// Обработка нажатий на кнопки inline-клавиатуры
 bot.on('callback_query', async (ctx) => {
     let chatID = ctx.callbackQuery.message.chat.id;
     const data = ctx.callbackQuery.data;
-
     await ctx.answerCbQuery();
     await interact(ctx, chatID, {
         type: "text",
@@ -73,7 +70,17 @@ bot.on('callback_query', async (ctx) => {
     });
 });
 
-bot.launch();
+// Настройка webhook
+app.use(express.json());
+app.use(bot.webhookCallback('/bot'));
 
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+const webhookUrl = 'https://grishabot2.onrender.com/bot';
+bot.telegram.setWebhook(webhookUrl).then(() => {
+    console.log(`Webhook set to ${webhookUrl}`);
+});
+
+// Привязка к порту
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
