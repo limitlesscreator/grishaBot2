@@ -1,5 +1,5 @@
 {
-  "name": "mybot",
+  "name": "grishabot",
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
@@ -8,6 +8,7 @@
   "dependencies": {
     "telegraf": "^4.16.3",
     "axios": "^1.8.1",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "express": "^4.19.2"
   }
 }
